@@ -8,6 +8,10 @@ using EmpowerID.Logging;
 using EmpowerID.CLI;
 using EmpowerID.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using EmpowerID.Application.Services.ProductService;
+using EmpowerID.Domain.Entities;
+using EmpowerID.Domain.Repositories;
+using EmpowerID.Infrastructure.Repositories;
 var builder = new ConfigurationBuilder().AddJsonFile("appsettings.json").AddEnvironmentVariables().Build();
 // Ask the service provider for the configuration abstraction.
 IConfiguration config = builder;
@@ -25,5 +29,31 @@ IHost host = Host.CreateDefaultBuilder(args).ConfigureServices(services =>
                     con
                 ));
     services.Configure<AppSettings>(config.GetSection("AppSettings"));
+    services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
     services.AddSingleton<ILoggerProvider, FileLoggerProvider>();
+    services.AddScoped<IProductService, ProductService>();
+    services.AddScoped<IProductRepository, ProductRepository>();
+    // Add Worker class as a singleton service
+    services.AddSingleton<MainWorker>();
 }).Build();
+
+// Create a scope to resolve the Worker service
+using (var serviceScope = host.Services.CreateScope())
+{
+    var services = serviceScope.ServiceProvider;
+
+    try
+    {
+        // Resolve and run the Worker service
+        var worker = services.GetRequiredService<MainWorker>();
+        await worker.MainAsync(args);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred.");
+    }
+}
+
+await host.RunAsync();

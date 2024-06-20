@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EmpowerID.Application\EmpowerID.Application.csproj" />
     <ProjectReference Include="..\EmpowerID.Domain\EmpowerID.Domain.csproj" />
     <ProjectReference Include="..\EmpowerID.Infrastructure\EmpowerID.Infrastructure.csproj" />
     <ProjectReference Include="..\EmpowerID.Logging\EmpowerID.Logging.csproj" />
