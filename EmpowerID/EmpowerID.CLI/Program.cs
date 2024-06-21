@@ -12,6 +12,8 @@ using EmpowerID.Application.Services.ProductService;
 using EmpowerID.Domain.Entities;
 using EmpowerID.Domain.Repositories;
 using EmpowerID.Infrastructure.Repositories;
+using EmpowerID.Domain.DomainServices;
+using EmpowerID.Infrastructure.DomainServices;
 var builder = new ConfigurationBuilder().AddJsonFile("appsettings.json").AddEnvironmentVariables().Build();
 // Ask the service provider for the configuration abstraction.
 IConfiguration config = builder;
@@ -29,10 +31,12 @@ IHost host = Host.CreateDefaultBuilder(args).ConfigureServices(services =>
                     con
                 ));
     services.Configure<AppSettings>(config.GetSection("AppSettings"));
+    services.Configure<SearchClientSettings>(config.GetSection(nameof(SearchClientSettings)));
     services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
     services.AddSingleton<ILoggerProvider, FileLoggerProvider>();
     services.AddScoped<IProductService, ProductService>();
+    services.AddScoped<IProductSearchService, ProductSearchService>();
     services.AddScoped<IProductRepository, ProductRepository>();
     // Add Worker class as a singleton service
     services.AddSingleton<MainWorker>();

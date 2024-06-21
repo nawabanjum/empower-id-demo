@@ -23,6 +23,7 @@ CREATE TABLE Products (
 	image_url NVARCHAR(250),
 	date_added DATETIME DEFAULT GETDATE(),
 	category_id INT NOT NULL,
+	date_updated DATETIME DEFAULT GETDATE();
 	CONSTRAINT FK_Category_Product FOREIGN KEY (category_id) REFERENCES Categories(category_id),
 );
 
@@ -89,5 +90,36 @@ BEGIN
     SELECT *
     FROM OrderedProducts
     WHERE RowNum BETWEEN @startRowIndex AND @endRowIndex;
+END;
+GO
+
+-- Create View , join products with category and create view for azure ai search
+CREATE VIEW vw_ProductsWithCategory AS
+SELECT p.product_id, 
+	   p.product_name,
+	   CAST(p.price AS FLOAT) AS price,
+	   p.[description],
+	   p.image_url,
+	   p.date_added,
+	   p.date_updated,
+	   c.category_id,
+	   c.category_name
+
+FROM Products p
+JOIN Categories c ON p.category_id = c.category_id;
+GO
+
+-- create trigger to update date_updated column 
+CREATE TRIGGER trg_UpdateLastUpdate
+ON Products
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Products
+    SET date_updated = GETDATE()
+    FROM Products p
+    INNER JOIN Inserted i ON p.product_id = i.product_id;
 END;
 GO

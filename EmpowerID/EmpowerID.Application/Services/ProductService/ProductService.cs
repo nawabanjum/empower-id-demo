@@ -18,9 +18,9 @@ namespace EmpowerID.Application.Services.ProductService
 
         public async Task<List<ProductDto>> SearchProductsAsync(ProductSearchRequest request)
         {
-            var products = await _productRepository.SearchProductsAsync(request.ProductName,request.CategoryId,request.MinPrice,request.MaxPrice,request.Description,request.DateAddedAtStart,request.DateAddedAtEnd,request.Take,request.Skip);
+            var products = await _productRepository.SearchProductsAsync(request.SearchText, request.CategoryId, request.MinPrice, request.MaxPrice, request.SearchText, request.DateAddedAtStart, request.DateAddedAtEnd, request.PageSize, request.PageNumber);
 
-            return _mapper.Map<List<ProductDto>>(products); 
+            return _mapper.Map<List<ProductDto>>(products);
         }
     }
 }

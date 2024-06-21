@@ -1,5 +1,6 @@
 ﻿using EmpowerID.Application.RequestModels;
 using EmpowerID.Application.Services.ProductService;
+using EmpowerID.Domain.DomainServices;
 using EmpowerID.Domain.Entities;
 using EmpowerID.Domain.Settings;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,13 +23,16 @@ namespace EmpowerID.CLI
         private readonly IOptions<AppSettings> _options;
         private readonly IServiceProvider _serviceProvider;
         private readonly IProductService _productService;
+        private readonly IProductSearchService _productSearchService;
 
-        public MainWorker(ILogger<MainWorker> logger, IOptions<AppSettings> options, IServiceProvider serviceProvider, IProductService productService)
+        public MainWorker(ILogger<MainWorker> logger, IOptions<AppSettings> options, IServiceProvider serviceProvider, IProductService productService,
+            IProductSearchService productSearchService)
         {
             _logger = logger;
             _options = options;
             _serviceProvider = serviceProvider;
             _productService = productService;
+            _productSearchService = productSearchService;
         }
 
         public async Task MainAsync(string[] args)
@@ -39,10 +43,7 @@ namespace EmpowerID.CLI
 
             while (!isExist)
             {
-                await Console.Out.WriteLineAsync("Enter 1 for Product Search ");
-                await Console.Out.WriteLineAsync("Enter 0 to exist app");
-
-                var input = ReadIntegerInput("Enter 1 for Product Search \nEnter 0 to exist app");
+                var input = ReadIntegerInput("Enter 1 for Product Search \nEnter 0 to exist app: ");
 
                 switch (input)
                 {
@@ -66,8 +67,7 @@ namespace EmpowerID.CLI
             await Console.Out.WriteLineAsync("Please enter search filter(s)");
             ProductSearchRequest request = new ProductSearchRequest
             {
-                ProductName = ReadStringInput("Name: "),
-                Description = ReadStringInput("Description: "),
+                SearchText = ReadStringInput("Search Text: "),
                 CategoryId = ReadIntegerInput("Category Id: ", true),
                 DateAddedAtStart = ReadDateInput("Added At Start: (yyyy-MM-dd)", true),
                 DateAddedAtEnd = ReadDateInput("Added At End: (yyyy-MM-dd)", true),
@@ -75,12 +75,31 @@ namespace EmpowerID.CLI
                 MinPrice = ReadDecimalInput("Min Price: ", true),
 
             };
-            while(true)
+            while (true)
             {
-                var results = await _productService.SearchProductsAsync(request);
+                //Search from database
+                //var results = await _productService.SearchProductsAsync(request);
+
+                //Search from azure
+
+                (var results, long? total) = await _productSearchService.SearchAsync(request.SearchText, request.CategoryId, request.MinPrice,
+                    request.MaxPrice, request.DateAddedAtStart, request.DateAddedAtEnd, request.PageNumber, request.PageSize);
+               
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string jsonString = JsonSerializer.Serialize(results, options);
                 Console.WriteLine(jsonString);
+
+                if (total.HasValue)
+                    await Console.Out.WriteLineAsync($"Total Records: {total}");
+
+                var next = ReadIntegerInput("Enter 1 for next page\nEnter 0 to exit");
+                if (next == 1 && results != null && results.Count == request.PageSize)
+                {
+                    request.PageSize++;
+                }
+
+                await Console.Out.WriteLineAsync("No More data is available ");
+                break;
             }
 
         }
@@ -160,7 +179,7 @@ namespace EmpowerID.CLI
             }
             return result;
         }
-       
+
 
 
     }
