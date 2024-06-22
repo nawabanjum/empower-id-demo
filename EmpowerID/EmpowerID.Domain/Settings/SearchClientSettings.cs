@@ -2,8 +2,8 @@
 {
     public class SearchClientSettings
     {
-        public string SearchServiceUri { get; set; }
-        public string SearchServiceQueryApiKey { get; set; }
-        public string SearchIndex { get; set; }
+        public string SearchServiceUri { get; set; } = string.Empty;
+        public string SearchServiceQueryApiKey { get; set; } = string.Empty;
+        public string SearchIndex { get; set; } = string.Empty;
     }
 }

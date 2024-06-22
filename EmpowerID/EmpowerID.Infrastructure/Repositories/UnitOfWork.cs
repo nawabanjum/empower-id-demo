@@ -2,11 +2,9 @@
 
 namespace EmpowerID.Infrastructure.Repositories
 {
-    internal sealed class UnitOfWork : IUnitOfWork
+    internal sealed class UnitOfWork(EmpowerIdDbContext context) : IUnitOfWork
     {
-        private readonly EmpowerIdDbContext _context;
-
-        public UnitOfWork(EmpowerIdDbContext context) => _context = context;
+        private readonly EmpowerIdDbContext _context = context;
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

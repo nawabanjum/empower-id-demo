@@ -1,20 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EmpowerID.Logging
 {
-    public class FileLogger : ILogger
+    public class FileLogger([NotNull] FileLoggerProvider fileLoggerProvider) : ILogger
     {
-        private readonly FileLoggerProvider _fileLoggerProvider;
-        public FileLogger([NotNull] FileLoggerProvider fileLoggerProvider)
-        {
-            _fileLoggerProvider = fileLoggerProvider ?? throw new ArgumentNullException(nameof(fileLoggerProvider));
-        }
+        private readonly FileLoggerProvider _fileLoggerProvider = fileLoggerProvider ?? throw new ArgumentNullException(nameof(fileLoggerProvider));
+
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull
         {
             return null;
@@ -24,7 +16,8 @@ namespace EmpowerID.Logging
         {
             return true;
         }
-        private Mutex _mutex = new Mutex(false);
+
+        private readonly Mutex _mutex = new(false);
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
@@ -32,16 +25,15 @@ namespace EmpowerID.Logging
             var logRecord = string.Format("{0} [{1}] {2} {3}", "[" + DateTimeOffset.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + "]", logLevel.ToString(), formatter(state, exception), exception != null ? exception.ToString() : "");
             WriteInFile(logRecord, fullPath);
         }
+
         private void WriteInFile(string text, string path)
         {
             _mutex.WaitOne();
             try
             {
-                using (StreamWriter stream = File.AppendText(path))
-                {
-                    stream.WriteLine(text);
-                    stream.Close();
-                }
+                using StreamWriter stream = File.AppendText(path);
+                stream.WriteLine(text);
+                stream.Close();
 
             }
             finally

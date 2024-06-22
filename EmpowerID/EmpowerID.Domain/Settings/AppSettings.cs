@@ -2,8 +2,8 @@
 {
     public class AppSettings
     {
-        public string LogFolder { get; set; }
-        public string LogFilePath { get; set; }
+        public string LogFolder { get; set; } = string.Empty;
+        public string LogFilePath { get; set; } = string.Empty;
         public int ServiceSleep { get; set; }
     }
 }

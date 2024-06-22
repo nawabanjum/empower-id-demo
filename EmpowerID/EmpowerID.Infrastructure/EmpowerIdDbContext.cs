@@ -3,12 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EmpowerID.Infrastructure
 {
-    public class EmpowerIdDbContext : DbContext
+    public class EmpowerIdDbContext(DbContextOptions options) : DbContext(options)
     {
-        public EmpowerIdDbContext(DbContextOptions options)
-    : base(options)
-        {
-        }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             

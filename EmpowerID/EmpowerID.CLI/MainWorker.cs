@@ -1,19 +1,10 @@
 ﻿using EmpowerID.Application.RequestModels;
 using EmpowerID.Application.Services.ProductService;
 using EmpowerID.Domain.DomainServices;
-using EmpowerID.Domain.Entities;
 using EmpowerID.Domain.Settings;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Identity.Client;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace EmpowerID.CLI
 {
@@ -37,27 +28,35 @@ namespace EmpowerID.CLI
 
         public async Task MainAsync(string[] args)
         {
-
-            _logger.LogInformation($"Main worker running at {DateTimeOffset.UtcNow}");
+            _logger.LogInformation("Main worker running at {time}", DateTime.UtcNow);
             bool isExist = false;
 
             while (!isExist)
             {
-                var input = ReadIntegerInput("Enter 1 for Product Search \nEnter 0 to exist app: ");
-
-                switch (input)
+                try
                 {
-                    case 0:
-                        isExist = true; break;
-                    case 1:
-                        await SearchProductsAsync();
-                        break;
+                    _logger.LogDebug("Getting User Input");
+                    var input = ReadIntegerInput("Enter 1 for Product Search \nEnter 0 to exist app: ");
 
-                    default:
-                        await Console.Out.WriteLineAsync("Invalid Option");
-                        break;
+                    switch (input)
+                    {
+                        case 0:
+                            _logger.LogDebug("User selected to existed the app.");
+                            isExist = true; break;
+                        case 1:
+                            _logger.LogDebug("User selected to search products");
+                            await SearchProductsAsync();
+                            break;
+
+                        default:
+                            await Console.Out.WriteLineAsync("Invalid Option Selected");
+                            break;
+                    }
                 }
-
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error has occured");
+                }
             }
 
         }
@@ -65,7 +64,7 @@ namespace EmpowerID.CLI
         private async Task SearchProductsAsync()
         {
             await Console.Out.WriteLineAsync("Please enter search filter(s)");
-            ProductSearchRequest request = new ProductSearchRequest
+            ProductSearchRequest request = new()
             {
                 SearchText = ReadStringInput("Search Text: "),
                 CategoryId = ReadIntegerInput("Category Id: ", true),
@@ -75,36 +74,39 @@ namespace EmpowerID.CLI
                 MinPrice = ReadDecimalInput("Min Price: ", true),
 
             };
+
             while (true)
             {
+
+                _logger.LogDebug("Loading page: {pageNumber}", request.PageNumber);
                 //Search from database
                 //var results = await _productService.SearchProductsAsync(request);
 
                 //Search from azure
-
                 (var results, long? total) = await _productSearchService.SearchAsync(request.SearchText, request.CategoryId, request.MinPrice,
                     request.MaxPrice, request.DateAddedAtStart, request.DateAddedAtEnd, request.PageNumber, request.PageSize);
-               
+
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string jsonString = JsonSerializer.Serialize(results, options);
                 Console.WriteLine(jsonString);
 
                 if (total.HasValue)
-                    await Console.Out.WriteLineAsync($"Total Records: {total}");
+                    _logger.LogDebug("Total Records: {total}", total);
 
                 var next = ReadIntegerInput("Enter 1 for next page\nEnter 0 to exit");
                 if (next == 1 && results != null && results.Count == request.PageSize)
                 {
                     request.PageSize++;
+                    continue;
                 }
 
-                await Console.Out.WriteLineAsync("No More data is available ");
+                _logger.LogDebug("No More data is available ");
                 break;
             }
 
         }
 
-        private string ReadStringInput(string prompt)
+        private static string? ReadStringInput(string prompt)
         {
             Console.Write(prompt);
             return Console.ReadLine();
@@ -116,7 +118,7 @@ namespace EmpowerID.CLI
             while (true)
             {
                 Console.Write(prompt);
-                string input = Console.ReadLine();
+                string? input = Console.ReadLine();
                 if (int.TryParse(input, out result))
                 {
                     break;
@@ -139,7 +141,7 @@ namespace EmpowerID.CLI
             while (true)
             {
                 Console.Write(prompt);
-                string input = Console.ReadLine();
+                string? input = Console.ReadLine();
                 if (decimal.TryParse(input, out result))
                 {
                     break;
@@ -163,7 +165,7 @@ namespace EmpowerID.CLI
             while (true)
             {
                 Console.Write(prompt);
-                string input = Console.ReadLine();
+                string? input = Console.ReadLine();
                 if (DateTime.TryParse(input, out result))
                 {
                     break;
@@ -179,8 +181,5 @@ namespace EmpowerID.CLI
             }
             return result;
         }
-
-
-
     }
 }

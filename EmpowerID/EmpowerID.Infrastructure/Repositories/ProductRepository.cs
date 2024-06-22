@@ -4,14 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EmpowerID.Infrastructure.Repositories
 {
-    public class ProductRepository : IProductRepository
+    public class ProductRepository(EmpowerIdDbContext dbContext) : IProductRepository
     {
-        private readonly EmpowerIdDbContext _dbContext;
-
-        public ProductRepository(EmpowerIdDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
+        private readonly EmpowerIdDbContext _dbContext = dbContext;
 
         public async Task<List<Product>> SearchProductsAsync(string? productName, int? categoryId, decimal? minPrice, decimal? maxPrice, string? description, DateTime? addedAtStart, DateTime? addedAtEnd, int pageSize, int pageNumer)
         {

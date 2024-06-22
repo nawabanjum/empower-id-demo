@@ -5,7 +5,7 @@ namespace EmpowerID.Domain.DomainModels
     public class ProductSearchModel
     {
         [JsonPropertyName("product_id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
         [JsonPropertyName("product_name")]
         public string Name { get; set; } = string.Empty;
@@ -21,6 +21,6 @@ namespace EmpowerID.Domain.DomainModels
         [JsonPropertyName("category_id")]
         public int CategoryId { get; set; }
         [JsonPropertyName("category_name")]
-        public string CategoryName { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
     }
 }

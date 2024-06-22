@@ -11,7 +11,7 @@ namespace EmpowerID.Domain.Entities
         public string Name { get; private set; } = string.Empty;
 
 
-        public virtual ICollection<Product> Products { get; set; }
+        public virtual ICollection<Product>? Products { get; set; }
 
         public Category(string name)
         {
