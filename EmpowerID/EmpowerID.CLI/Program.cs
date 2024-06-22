@@ -12,6 +12,9 @@ using EmpowerID.Domain.Repositories;
 using EmpowerID.Infrastructure.Repositories;
 using EmpowerID.Domain.DomainServices;
 using EmpowerID.Infrastructure.DomainServices;
+using Azure.Identity;
+using Microsoft.Azure.Management.DataFactory;
+using Microsoft.Rest.Azure.Authentication;
 
 IConfiguration config = new ConfigurationBuilder().AddJsonFile("appsettings.json").AddEnvironmentVariables().Build();
 
@@ -27,7 +30,24 @@ IHost host = Host.CreateDefaultBuilder(args).ConfigureServices(services =>
 
     services.Configure<AppSettings>(config.GetSection("AppSettings"));
     services.Configure<SearchClientSettings>(config.GetSection(nameof(SearchClientSettings)));
+    services.Configure<EtlServiceSettings>(config.GetSection(nameof(EtlServiceSettings)));
     services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+    services.AddSingleton<EtlService>();
+    services.AddSingleton<DataFactoryManagementClient>(provider =>
+    {
+        var configuration = provider.GetRequiredService<IConfiguration>();
+        var subscriptionId = configuration["EtlServiceSettings:SubscriptionId"];
+        var clientId = configuration["EtlServiceSettings:ClientId"];
+        var clientSecret = configuration["EtlServiceSettings:ClientSecret"];
+        var tenantId = configuration["EtlServiceSettings:TenantId"];
+        var credentials = ApplicationTokenProvider.LoginSilentAsync(
+                           tenantId, clientId, clientSecret).Result;
+        return new DataFactoryManagementClient(credentials)
+        {
+            SubscriptionId = subscriptionId
+        };
+    });
 
     services.AddSingleton<ILoggerProvider, FileLoggerProvider>();
     services.AddScoped<IProductService, ProductService>();

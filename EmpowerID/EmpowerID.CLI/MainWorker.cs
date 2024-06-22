@@ -2,6 +2,7 @@
 using EmpowerID.Application.Services.ProductService;
 using EmpowerID.Domain.DomainServices;
 using EmpowerID.Domain.Settings;
+using EmpowerID.Infrastructure.DomainServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
@@ -15,15 +16,17 @@ namespace EmpowerID.CLI
         private readonly IServiceProvider _serviceProvider;
         private readonly IProductService _productService;
         private readonly IProductSearchService _productSearchService;
+        private readonly EtlService _etlService;
 
         public MainWorker(ILogger<MainWorker> logger, IOptions<AppSettings> options, IServiceProvider serviceProvider, IProductService productService,
-            IProductSearchService productSearchService)
+            IProductSearchService productSearchService, EtlService etlService)
         {
             _logger = logger;
             _options = options;
             _serviceProvider = serviceProvider;
             _productService = productService;
             _productSearchService = productSearchService;
+            _etlService = etlService;
         }
 
         public async Task MainAsync(string[] args)
@@ -36,7 +39,7 @@ namespace EmpowerID.CLI
                 try
                 {
                     _logger.LogDebug("Getting User Input");
-                    var input = ReadIntegerInput("Enter 1 for Product Search \nEnter 0 to exist app: ");
+                    var input = ReadIntegerInput("Enter 1 for Product Search \nEnter 2 to Run ETL pipeline\nEnter 0 to exist app: ");
 
                     switch (input)
                     {
@@ -46,6 +49,10 @@ namespace EmpowerID.CLI
                         case 1:
                             _logger.LogDebug("User selected to search products");
                             await SearchProductsAsync();
+                            break;
+                        case 2:
+                            _logger.LogDebug("User selected to Run ETL pipeline");
+                            await _etlService.RunPipelineAsync();
                             break;
 
                         default:

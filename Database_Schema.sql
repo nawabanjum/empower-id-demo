@@ -123,3 +123,53 @@ BEGIN
     INNER JOIN Inserted i ON p.product_id = i.product_id;
 END;
 GO
+
+-- Create SP to upsert category
+CREATE PROCEDURE usp_UpsertCategory
+@CategoryName NVARCHAR(100),
+@CategoryId INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Id INT;
+
+    SELECT @Id = category_id
+    FROM Categories
+    WHERE category_name = @CategoryName;
+
+    IF @Id IS NULL
+    BEGIN
+        INSERT INTO Categories (category_name)
+        VALUES (@CategoryName);
+
+        SET @CategoryId = SCOPE_IDENTITY();
+    END
+    ELSE
+    BEGIN
+        SET @CategoryId = @Id;
+    END
+END
+
+
+
+-- Create SP to Insert products
+CREATE PROCEDURE usp_InsertProduct
+@ProductName NVARCHAR(100),
+@RetailPrice DECIMAL(18, 2),
+@CategoryId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Products (
+        product_name,
+        price,
+        category_id
+    )
+    VALUES (
+        @ProductName,
+        @RetailPrice,
+        @CategoryId
+    );
+END
