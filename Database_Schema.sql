@@ -1,4 +1,6 @@
 -- Create the database
+
+-- DROP DATABASE EmpowerIDDB;
 CREATE DATABASE EmpowerIDDB;
 GO
 
@@ -13,7 +15,7 @@ CREATE TABLE Categories(
 );
 
 CREATE INDEX IDX_category_name ON Categories(category_name);
-
+GO
 -- Create table Products
 CREATE TABLE Products (
     product_id INT PRIMARY KEY IDENTITY(1,1),
@@ -23,7 +25,7 @@ CREATE TABLE Products (
 	image_url NVARCHAR(250),
 	date_added DATETIME DEFAULT GETDATE(),
 	category_id INT NOT NULL,
-	date_updated DATETIME DEFAULT GETDATE();
+	date_updated DATETIME DEFAULT GETDATE(),
 	CONSTRAINT FK_Category_Product FOREIGN KEY (category_id) REFERENCES Categories(category_id),
 );
 
@@ -125,7 +127,7 @@ END;
 GO
 
 -- Create SP to upsert category
-CREATE PROCEDURE usp_UpsertCategory
+CREATE PROCEDURE usp_UpsertCategory 
 @CategoryName NVARCHAR(100),
 @CategoryId INT OUTPUT
 AS
@@ -151,10 +153,10 @@ BEGIN
     END
 END
 
-
+go
 
 -- Create SP to Insert products
-CREATE PROCEDURE usp_InsertProduct
+CREATE PROCEDURE usp_UpsertProduct
 @ProductName NVARCHAR(100),
 @RetailPrice DECIMAL(18, 2),
 @CategoryId INT
@@ -162,14 +164,38 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO Products (
-        product_name,
-        price,
-        category_id
-    )
-    VALUES (
-        @ProductName,
-        @RetailPrice,
-        @CategoryId
-    );
+    IF EXISTS (SELECT 1 FROM Products WHERE product_name = @ProductName)
+    BEGIN
+        -- Update the existing product
+        UPDATE Products
+        SET price = @RetailPrice,
+            category_id = @CategoryId
+        WHERE product_name = @ProductName;
+    END
+    ELSE
+    BEGIN
+        -- Insert a new product
+        INSERT INTO Products (
+            product_name,
+            price,
+            category_id
+        )
+        VALUES (
+            @ProductName,
+            @RetailPrice,
+            @CategoryId
+        );
+    END
 END
+
+-- enable CDC in database
+
+EXEC sys.sp_cdc_enable_db;
+GO
+
+EXEC sys.sp_cdc_enable_table
+    @source_schema = 'dbo',
+    @source_name = N'products',
+    @role_name = NULL,
+    @supports_net_changes = 1
+GO
